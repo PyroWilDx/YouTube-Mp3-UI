@@ -1,0 +1,8 @@
+.MainButton {
+    -fx-background-color: RGB(22, 164, 250);
+    -fx-background-insets: 0;
+}
+
+.MainButton:hover {
+    -fx-background-color: RGB(41, 128, 185);
+}
