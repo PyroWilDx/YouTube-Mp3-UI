@@ -6,22 +6,28 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.net.URL;
 
 public class MainApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
+        URL mainViewFXML = getClass().getResource("main-view.fxml");
+        FXMLLoader loader = new FXMLLoader(mainViewFXML);
 
-        Scene scene = new Scene(fxmlLoader.load());
-        scene.getStylesheets().add(MainApplication.class.getResource("main-view.css").toExternalForm());
-        stage.setScene(scene);
+        Scene scene = new Scene(loader.load());
+        URL mainViewCSS = getClass().getResource("main-view.css");
+        if (mainViewCSS == null) {
+            System.out.println("MainApplication: File main-view.css not found.");
+            return;
+        }
+        scene.getStylesheets().add(mainViewCSS.toExternalForm());
 
         stage.setTitle("YouTube-Mp3");
-
+        stage.setScene(scene);
         stage.show();
     }
 
     public static void main(String[] args) {
-        launch();
+        launch(args);
     }
 }

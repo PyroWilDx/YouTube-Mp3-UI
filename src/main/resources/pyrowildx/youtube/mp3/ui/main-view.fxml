@@ -7,12 +7,11 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="640.0" prefWidth="960.0" style="-fx-background-color: RGB(42, 42, 42);" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="640.0" prefWidth="960.0" style="-fx-background-color: RGB(42, 42, 42);" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pyrowildx.youtube.mp3.ui.MainController">
    <children>
       <AnchorPane prefHeight="60.0" prefWidth="960.0" style="-fx-background-color: RGB(26, 32, 37); -fx-border-color: WHITE; -fx-border-width: 0 0 2 0;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
-            <Button fx:id="plusButton" alignment="CENTER" ellipsisString="+" layoutX="18.0" layoutY="18.0" maxWidth="56.0" minWidth="56.0" mnemonicParsing="false" prefWidth="56.0" style="-fx-padding: -60;" styleClass="MainButton" text="+" textAlignment="CENTER" textFill="#e6edf8" AnchorPane.bottomAnchor="8.0" AnchorPane.leftAnchor="8.0" AnchorPane.topAnchor="8.0">
+            <Button fx:id="plusButton" alignment="CENTER" ellipsisString="+" layoutX="18.0" layoutY="18.0" maxWidth="56.0" minWidth="56.0" mnemonicParsing="false" onAction="#onPlusButtonAction" prefWidth="56.0" style="-fx-padding: -60;" styleClass="MainButton" text="+" textAlignment="CENTER" textFill="#e6edf8" AnchorPane.bottomAnchor="8.0" AnchorPane.leftAnchor="8.0" AnchorPane.topAnchor="8.0">
                <font>
                   <Font size="48.0" />
                </font>
@@ -20,9 +19,9 @@
          </children>
       </AnchorPane>
       <ListView fx:id="videoListView" prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: RGB(26, 32, 37);" AnchorPane.bottomAnchor="60.0" AnchorPane.leftAnchor="8.0" AnchorPane.rightAnchor="8.0" AnchorPane.topAnchor="68.0" />
-      <Label fx:id="emptyLabel" alignment="CENTER" layoutX="249.0" layoutY="304.0" text="Video list is empty, add a new URL." textAlignment="CENTER" textFill="#e6edf8">
+      <Label fx:id="emptyLabel" alignment="CENTER" text="Empty Video List." textAlignment="CENTER" textFill="#e6edf8" AnchorPane.bottomAnchor="200.0" AnchorPane.leftAnchor="200.0" AnchorPane.rightAnchor="200.0" AnchorPane.topAnchor="200.0">
          <font>
-            <Font name="System Bold" size="28.0" />
+            <Font size="28.0" />
          </font>
       </Label>
       <Button fx:id="dlButton" alignment="CENTER" mnemonicParsing="false" prefHeight="36.0" styleClass="MainButton" text="Download" textAlignment="CENTER" textFill="#e6edf8" AnchorPane.bottomAnchor="12.0" AnchorPane.leftAnchor="360.0" AnchorPane.rightAnchor="360.0">
@@ -40,6 +39,6 @@
             <Font size="16.0" />
          </font>
       </Label>
-      <ProgressBar fx:id="downloadProgressBar" layoutX="732.0" layoutY="611.0" prefWidth="220.0" progress="0.0" AnchorPane.bottomAnchor="8.0" AnchorPane.rightAnchor="8.0" />
+      <ProgressBar fx:id="dlProgressBar" layoutX="732.0" layoutY="611.0" prefWidth="220.0" progress="0.0" AnchorPane.bottomAnchor="8.0" AnchorPane.rightAnchor="8.0" />
    </children>
 </AnchorPane>
