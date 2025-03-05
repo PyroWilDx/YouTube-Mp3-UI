@@ -1,5 +1,7 @@
 package pyrowildx.youtube.mp3.ui;
 
+import javafx.concurrent.Task;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -18,10 +20,15 @@ import javafx.stage.Window;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainController {
     private static final int DEFAULT_IMAGE_WIDTH = 3600;
@@ -42,6 +49,9 @@ public class MainController {
     @FXML
     private ProgressBar dlProgressBar;
 
+    private final Map<Video, HBox> videoHBoxMap = new HashMap<>();
+    private boolean isAddingVideo = false;
+
     @FXML
     private void initialize() {
         setupVideoListView();
@@ -61,10 +71,22 @@ public class MainController {
                     return;
                 }
 
-                if (item.equals(prevVideo)) {
+                if (item == prevVideo) {
                     return;
                 }
                 prevVideo = item;
+
+                if (isAddingVideo) {
+                    if (videoListView.getItems().size() > 1 && videoHBoxMap.containsKey(item)) {
+                        setGraphic(videoHBoxMap.get(item));
+                        return;
+                    }
+                } else {
+                    if (videoHBoxMap.containsKey(item)) {
+                        setGraphic(videoHBoxMap.get(item));
+                        return;
+                    }
+                }
 
                 Utils.addStyle(this, "-fx-background-color: RGB(42, 42, 42);");
                 Utils.addStyle(this, "-fx-border-width: 0 0 2 0; -fx-border-color: RGB(68, 68, 68);");
@@ -82,8 +104,25 @@ public class MainController {
                 vImageContainer.setAlignment(Pos.CENTER);
 
                 ImageView vImageView = new ImageView();
-                if (item.vImageURL != null && !item.vImageURL.isEmpty()) {
-                    vImageView.setImage(new Image(item.vImageURL, true));
+                String vImageURL = null;
+                if (item.vHqImageURL != null && !item.vHqImageURL.isEmpty()) {
+//                    if (!item.vHqImageURL.endsWith(".webp")) {
+                    Image vHqImage = new Image(item.vHqImageURL, true);
+//                        if (vHqImage.getWidth() != 0 && vHqImage.getHeight() != 0) {
+                    vImageView.setImage(vHqImage);
+                    vImageURL = item.vHqImageURL;
+//                        } else {
+//                            if (item.vMqImageURL != null && !item.vMqImageURL.isEmpty()) {
+//                                Image vMqImage = new Image(item.vMqImageURL, true);
+//                                if (vMqImage.getWidth() != 0 && vMqImage.getHeight() != 0) {
+//                                    vImageView.setImage(vMqImage);
+//                                    vImageURL = item.vMqImageURL;
+//                                }
+//                            }
+//                        }
+//                    } else {
+//                        loadImageAsync(item.vHqImageURL, vImageView);
+//                    }
                 }
                 vImageView.setFitWidth(vImageContainerWidth);
                 vImageView.setFitHeight(vImageContainerHeight);
@@ -100,14 +139,17 @@ public class MainController {
                 vTitleField.textProperty().addListener((_, _, newValue)
                         -> item.vTitle = newValue);
 
-                TextArea vImageURLField = new TextArea(item.vImageURL);
+                TextArea vImageURLField = new TextArea(vImageURL);
                 Utils.setRegionWidth(vImageURLField, 160);
                 Utils.setRegionHeight(vImageURLField, widgetPrefHeight);
                 vImageURLField.setWrapText(true);
                 vImageURLField.textProperty().addListener((_, _, newValue)
                         -> {
-                    item.vImageURL = newValue;
-                    vImageView.setImage(new Image(item.vImageURL, true));
+                    item.vHqImageURL = newValue;
+                    try {
+                        vImageView.setImage(new Image(item.vHqImageURL, true));
+                    } catch (IllegalArgumentException _) {
+                    }
                 });
 
                 TextField vImageWidthField = new TextField(String.valueOf(item.vImageWidth));
@@ -130,7 +172,9 @@ public class MainController {
                 Button rmButton = new Button("❌");
                 rmButton.setStyle("-fx-text-fill: RED");
                 rmButton.setOnAction(_ -> {
+                    isAddingVideo = false;
                     videoListView.getItems().remove(item);
+                    videoHBoxMap.remove(item);
                     if (videoListView.getItems().isEmpty()) {
                         emptyLabel.setVisible(true);
                     }
@@ -138,8 +182,31 @@ public class MainController {
 
                 hBox.getChildren().addAll(vImageContainer, vTitleField, vImageURLField, vImageWidthField, vImageFormatComboBox, rmButton);
                 setGraphic(hBox);
+
+                videoHBoxMap.put(item, hBox);
             }
         });
+    }
+
+    private void loadImageAsync(String vImageURL, ImageView vImageView) {
+        Task<Image> loadImageTask = new Task<>() {
+            @Override
+            protected Image call() throws Exception {
+                BufferedImage bufferedImage;
+                try {
+                    bufferedImage = ImageIO.read(new URI(vImageURL).toURL());
+                } catch (IOException _) {
+                    return null;
+                }
+                return SwingFXUtils.toFXImage(bufferedImage, null);
+            }
+        };
+
+        loadImageTask.setOnSucceeded(_ -> vImageView.setImage(loadImageTask.getValue()));
+
+        Thread loadImageThread = new Thread(loadImageTask);
+        loadImageThread.setDaemon(true);
+        loadImageThread.start();
     }
 
     @FXML
@@ -160,6 +227,7 @@ public class MainController {
         popupStage.setResizable(false);
 
         Runnable popupStageCloseFn = () -> {
+            emptyLabel.setVisible(false);
             mainRoot.getChildren().remove(darkOverlay);
             popupStage.close();
         };
@@ -187,7 +255,7 @@ public class MainController {
         confirmButton.setOnAction(_ -> {
             Video newVideo = makeVideoFromURL(vURLTextField.getText());
             if (newVideo != null) {
-                emptyLabel.setVisible(false);
+                isAddingVideo = true;
                 videoListView.getItems().add(newVideo);
                 popupStageCloseFn.run();
             }
@@ -227,7 +295,7 @@ public class MainController {
         } else {
             if (isAudioFile(vURL)) {
                 String vTitle = vURL.substring(vURL.lastIndexOf("/") + 1);
-                return new Video(vURL, vTitle, "", DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_FORMAT);
+                return new Video(vURL, vTitle, "", "", DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_FORMAT);
             }
         }
         return null;
@@ -255,8 +323,9 @@ public class MainController {
             if (!jsonOutput.isEmpty()) {
                 JSONObject jsonObject = new JSONObject(jsonOutput.toString());
                 String vTitle = jsonObject.getString("title");
-                String vImageURL = String.format("https://img.youtube.com/vi/%s/maxresdefault.jpg", jsonObject.getString("id"));
-                return new Video(vURL, vTitle, vImageURL, DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_FORMAT);
+                String vHqImageURL = String.format("https://img.youtube.com/vi/%s/maxresdefault.jpg", jsonObject.getString("id"));
+                String vMqImageURL = String.format("https://img.youtube.com/vi/%s/mqdefault.jpg", jsonObject.getString("id"));
+                return new Video(vURL, vTitle, vHqImageURL, vMqImageURL, DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_FORMAT);
             }
         } catch (IOException | InterruptedException | JSONException e) {
             return null;
@@ -277,14 +346,16 @@ public class MainController {
     private static class Video {
         public String vURL;
         public String vTitle;
-        public String vImageURL;
+        public String vHqImageURL;
+        public String vMqImageURL;
         public int vImageWidth;
         public String vImageFormat;
 
-        public Video(String vURL_, String vTitle_, String vImageURL_, int vImageWidth_, String vImageFormat_) {
+        public Video(String vURL_, String vTitle_, String vImageURL_, String vMqImageURL_, int vImageWidth_, String vImageFormat_) {
             vURL = vURL_;
             vTitle = vTitle_;
-            vImageURL = vImageURL_;
+            vHqImageURL = vImageURL_;
+            vMqImageURL = vMqImageURL_;
             vImageWidth = vImageWidth_;
             vImageFormat = vImageFormat_;
         }
@@ -297,7 +368,7 @@ public class MainController {
 
             return vURL.equals(v.vURL)
                     && vTitle.equals(v.vTitle)
-                    && vImageURL.equals(v.vImageURL)
+                    && vHqImageURL.equals(v.vHqImageURL)
                     && vImageWidth == v.vImageWidth
                     && vImageFormat.equals(v.vImageFormat);
         }
