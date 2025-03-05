@@ -69,7 +69,7 @@ public class MainController {
                 Utils.addStyle(this, "-fx-background-color: RGB(42, 42, 42);");
                 Utils.addStyle(this, "-fx-border-width: 0 0 2 0; -fx-border-color: RGB(68, 68, 68);");
 
-                HBox hBox = new HBox(8);
+                HBox hBox = new HBox(16);
                 int hBoxHeight = 116;
                 Utils.setRegionHeight(hBox, hBoxHeight);
                 hBox.setAlignment(Pos.CENTER_LEFT);
@@ -127,7 +127,8 @@ public class MainController {
                 vImageFormatComboBox.valueProperty().addListener((_, _, newValue)
                         -> item.vImageFormat = newValue);
 
-                Button rmButton = new Button("Remove");
+                Button rmButton = new Button("❌");
+                rmButton.setStyle("-fx-text-fill: RED");
                 rmButton.setOnAction(_ -> {
                     videoListView.getItems().remove(item);
                     if (videoListView.getItems().isEmpty()) {
@@ -254,7 +255,7 @@ public class MainController {
             if (!jsonOutput.isEmpty()) {
                 JSONObject jsonObject = new JSONObject(jsonOutput.toString());
                 String vTitle = jsonObject.getString("title");
-                String vImageURL = String.format("https://img.youtube.com/vi/%s/mqdefault.jpg", jsonObject.getString("id"));
+                String vImageURL = String.format("https://img.youtube.com/vi/%s/maxresdefault.jpg", jsonObject.getString("id"));
                 return new Video(vURL, vTitle, vImageURL, DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_FORMAT);
             }
         } catch (IOException | InterruptedException | JSONException e) {
