@@ -11,18 +11,17 @@ import java.net.URL;
 public class MainApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        URL mainViewFXML = getClass().getResource("main-view.fxml");
+        URL mainViewFXML = MainApplication.class.getResource("main-view.fxml");
         FXMLLoader loader = new FXMLLoader(mainViewFXML);
 
         Scene scene = new Scene(loader.load());
-        URL mainViewCSS = getClass().getResource("main-view.css");
-        if (mainViewCSS == null) {
-            System.out.println("MainApplication: File main-view.css not found.");
-            return;
-        }
-        scene.getStylesheets().add(mainViewCSS.toExternalForm());
+        Utils.addStyleSheet(MainApplication.class, scene, Const.mainViewCSSFile);
 
         stage.setTitle("YouTube-Mp3");
+        stage.setMinWidth(960);
+        stage.setMinHeight(640);
+        stage.setWidth(960);
+        stage.setHeight(640);
         stage.setScene(scene);
         stage.show();
     }

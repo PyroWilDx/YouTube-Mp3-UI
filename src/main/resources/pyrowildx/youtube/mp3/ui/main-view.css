@@ -1,8 +1,19 @@
 .MainButton {
     -fx-background-color: RGB(22, 164, 250);
     -fx-background-insets: 0;
+    -fx-text-fill: RGB(230, 237, 248);
 }
 
 .MainButton:hover {
     -fx-background-color: RGB(41, 128, 185);
+}
+
+.SecondaryButton {
+    -fx-background-color: RGB(87, 89, 91);
+    -fx-background-insets: 0;
+    -fx-text-fill: RGB(230, 237, 248);
+}
+
+.SecondaryButton:hover {
+    -fx-background-color: RGB(105, 107, 109);
 }

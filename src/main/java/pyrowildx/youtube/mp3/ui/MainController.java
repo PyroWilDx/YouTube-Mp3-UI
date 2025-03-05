@@ -8,11 +8,13 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.Window;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -64,22 +66,19 @@ public class MainController {
                 }
                 prevVideo = item;
 
+                Utils.addStyle(this, "-fx-background-color: RGB(42, 42, 42);");
+                Utils.addStyle(this, "-fx-border-width: 0 0 2 0; -fx-border-color: RGB(68, 68, 68);");
+
                 HBox hBox = new HBox(8);
                 int hBoxHeight = 116;
-                hBox.setMinHeight(hBoxHeight);
-                hBox.setPrefHeight(hBoxHeight);
-                hBox.setMaxHeight(hBoxHeight);
+                Utils.setRegionHeight(hBox, hBoxHeight);
                 hBox.setAlignment(Pos.CENTER_LEFT);
 
                 VBox vImageContainer = new VBox(8);
                 int vImageContainerWidth = 192;
                 int vImageContainerHeight = hBoxHeight - 8;
-                vImageContainer.setMinWidth(vImageContainerWidth);
-                vImageContainer.setPrefWidth(vImageContainerWidth);
-                vImageContainer.setMaxWidth(vImageContainerWidth);
-                vImageContainer.setMinHeight(vImageContainerHeight);
-                vImageContainer.setPrefHeight(vImageContainerHeight);
-                vImageContainer.setMaxHeight(vImageContainerHeight);
+                Utils.setRegionWidth(vImageContainer, vImageContainerWidth);
+                Utils.setRegionHeight(vImageContainer, vImageContainerHeight);
                 vImageContainer.setAlignment(Pos.CENTER);
 
                 ImageView vImageView = new ImageView();
@@ -92,11 +91,19 @@ public class MainController {
 
                 vImageContainer.getChildren().add(vImageView);
 
-                TextField vTitleField = new TextField(item.vTitle);
+                int widgetPrefHeight = hBoxHeight - 32;
+
+                TextArea vTitleField = new TextArea(item.vTitle);
+                Utils.setRegionWidth(vTitleField, 260);
+                Utils.setRegionHeight(vTitleField, widgetPrefHeight);
+                vTitleField.setWrapText(true);
                 vTitleField.textProperty().addListener((_, _, newValue)
                         -> item.vTitle = newValue);
 
-                TextField vImageURLField = new TextField(item.vImageURL);
+                TextArea vImageURLField = new TextArea(item.vImageURL);
+                Utils.setRegionWidth(vImageURLField, 160);
+                Utils.setRegionHeight(vImageURLField, widgetPrefHeight);
+                vImageURLField.setWrapText(true);
                 vImageURLField.textProperty().addListener((_, _, newValue)
                         -> {
                     item.vImageURL = newValue;
@@ -104,6 +111,7 @@ public class MainController {
                 });
 
                 TextField vImageWidthField = new TextField(String.valueOf(item.vImageWidth));
+                Utils.setRegionWidth(vImageWidthField, 80);
                 vImageWidthField.setTextFormatter(new TextFormatter<>(change -> {
                     if (change.getControlNewText().matches("\\d*")) {
                         return change;
@@ -135,34 +143,67 @@ public class MainController {
 
     @FXML
     private void onPlusButtonAction(ActionEvent e) {
+        Stage mainStage = (Stage) videoListView.getScene().getWindow();
+        Rectangle darkOverlay = new Rectangle();
+        darkOverlay.setFill(Color.rgb(0, 0, 0, 0.38));
+        darkOverlay.setWidth(mainStage.getWidth());
+        darkOverlay.setHeight(mainStage.getHeight());
+        AnchorPane mainRoot = (AnchorPane) mainStage.getScene().getRoot();
+        mainRoot.getChildren().add(darkOverlay);
+
         Stage popupStage = new Stage();
+        popupStage.setWidth(360);
+        popupStage.setHeight(200);
         popupStage.initModality(Modality.APPLICATION_MODAL);
         popupStage.initStyle(StageStyle.UNDECORATED);
         popupStage.setResizable(false);
 
+        Runnable popupStageCloseFn = () -> {
+            mainRoot.getChildren().remove(darkOverlay);
+            popupStage.close();
+        };
+
         Label infoLabel = new Label("Enter URL");
+        infoLabel.setStyle("-fx-text-fill: " + Const.whiteTextColorRGB + "; " +
+                "-fx-font-size: 22px; " +
+                "-fx-font-weight: BOLD;");
+
         TextField vURLTextField = new TextField();
+        vURLTextField.setStyle("-fx-text-fill: " + Const.whiteTextColorRGB + "; " +
+                "-fx-font-size: 14px; " +
+                "-fx-background-color: RGB(40, 41, 42); " +
+                "-fx-border-color: RGB(80, 80, 80); " +
+                "-fx-border-width: 2");
 
         Button cancelButton = new Button("Cancel");
-        cancelButton.setOnAction(_ -> popupStage.close());
+        cancelButton.getStyleClass().add("SecondaryButton");
+        Utils.addStyle(cancelButton, "-fx-font-size: 16px;");
+        cancelButton.setOnAction(_ -> popupStageCloseFn.run());
 
         Button confirmButton = new Button("Confirm");
+        confirmButton.getStyleClass().add("MainButton");
+        Utils.addStyle(confirmButton, "-fx-font-size: 16px; -fx-font-weight: BOLD;");
         confirmButton.setOnAction(_ -> {
             Video newVideo = makeVideoFromURL(vURLTextField.getText());
             if (newVideo != null) {
                 emptyLabel.setVisible(false);
                 videoListView.getItems().add(newVideo);
-                popupStage.close();
+                popupStageCloseFn.run();
             }
         });
 
-        HBox buttonLayout = new HBox(8, cancelButton, confirmButton);
-        buttonLayout.setStyle("-fx-alignment: center;");
+        HBox buttonLayout = new HBox(32, cancelButton, confirmButton);
+        buttonLayout.setStyle("-fx-alignment: CENTER;");
 
-        VBox popupLayout = new VBox(8, infoLabel, vURLTextField, buttonLayout);
-        popupLayout.setStyle("-fx-padding: 16px; -fx-alignment: center;");
+        VBox popupLayout = new VBox(32, infoLabel, vURLTextField, buttonLayout);
+        popupLayout.setStyle("-fx-background-color: RGB(38, 44, 48); " +
+                "-fx-padding: 16px; " +
+                "-fx-alignment: CENTER; " +
+                "-fx-border-color: RGB(100, 100, 100); " +
+                "-fx-border-width: 4;");
 
         Scene popupScene = new Scene(popupLayout, 300, 160);
+        Utils.addStyleSheet(MainApplication.class, popupScene, Const.mainViewCSSFile);
         popupScene.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER) {
                 confirmButton.fire();
@@ -170,6 +211,10 @@ public class MainController {
                 cancelButton.fire();
             }
         });
+
+        Window mainWindow = videoListView.getScene().getWindow();
+        popupStage.setX(mainWindow.getX() + (mainWindow.getWidth() - popupStage.getWidth()) / 2);
+        popupStage.setY(mainWindow.getY() + (mainWindow.getHeight() - popupStage.getHeight()) / 2);
 
         popupStage.setScene(popupScene);
         popupStage.show();
