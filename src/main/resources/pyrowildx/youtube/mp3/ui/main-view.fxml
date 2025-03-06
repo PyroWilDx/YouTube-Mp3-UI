@@ -24,12 +24,12 @@
             <Font size="28.0" />
          </font>
       </Label>
-      <Button fx:id="dlButton" alignment="CENTER" mnemonicParsing="false" prefHeight="36.0" styleClass="MainButton" text="Download" textAlignment="CENTER" textFill="#e6edf8" AnchorPane.bottomAnchor="12.0" AnchorPane.leftAnchor="360.0" AnchorPane.rightAnchor="360.0">
+      <Button fx:id="dlButton" alignment="CENTER" mnemonicParsing="false" onAction="#onDownloadButtonAction" prefHeight="36.0" styleClass="MainButton" text="Download" textAlignment="CENTER" textFill="#e6edf8" AnchorPane.bottomAnchor="12.0" AnchorPane.leftAnchor="360.0" AnchorPane.rightAnchor="360.0">
          <font>
             <Font name="System Bold" size="16.0" />
          </font>
       </Button>
-      <Button fx:id="openOutputFolderButton" mnemonicParsing="false" styleClass="SecondaryButton" text="Open Output Folder" textAlignment="CENTER" textFill="#e6edf8" AnchorPane.bottomAnchor="12.0" AnchorPane.leftAnchor="8.0">
+      <Button fx:id="openOutputFolderButton" mnemonicParsing="false" onAction="#onOpenOutputFolderAction" styleClass="SecondaryButton" text="Open Output Folder" textAlignment="CENTER" textFill="#e6edf8" AnchorPane.bottomAnchor="12.0" AnchorPane.leftAnchor="8.0">
          <font>
             <Font size="16.0" />
          </font>

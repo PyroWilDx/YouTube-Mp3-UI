@@ -28,7 +28,10 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
 
 public class MainController {
     private static final int DEFAULT_IMAGE_WIDTH = 3600;
@@ -49,7 +52,8 @@ public class MainController {
     @FXML
     private ProgressBar dlProgressBar;
 
-    private final Map<Video, HBox> videoHBoxMap = new HashMap<>();
+    private final Set<String> vURLSet = new HashSet<>();
+    private final Map<Video, HBox> vHBoxMap = new HashMap<>();
     private boolean isAddingVideo = false;
 
     @FXML
@@ -77,13 +81,13 @@ public class MainController {
                 prevVideo = item;
 
                 if (isAddingVideo) {
-                    if (videoListView.getItems().size() > 1 && videoHBoxMap.containsKey(item)) {
-                        setGraphic(videoHBoxMap.get(item));
+                    if (videoListView.getItems().size() > 1 && vHBoxMap.containsKey(item)) {
+                        setGraphic(vHBoxMap.get(item));
                         return;
                     }
                 } else {
-                    if (videoHBoxMap.containsKey(item)) {
-                        setGraphic(videoHBoxMap.get(item));
+                    if (vHBoxMap.containsKey(item)) {
+                        setGraphic(vHBoxMap.get(item));
                         return;
                     }
                 }
@@ -149,6 +153,7 @@ public class MainController {
                     try {
                         vImageView.setImage(new Image(item.vHqImageURL, true));
                     } catch (IllegalArgumentException _) {
+                        vImageView.setImage(null);
                     }
                 });
 
@@ -170,11 +175,14 @@ public class MainController {
                         -> item.vImageFormat = newValue);
 
                 Button rmButton = new Button("❌");
-                rmButton.setStyle("-fx-text-fill: RED");
+                rmButton.setStyle("-fx-text-fill: RED;");
                 rmButton.setOnAction(_ -> {
                     isAddingVideo = false;
                     videoListView.getItems().remove(item);
-                    videoHBoxMap.remove(item);
+
+                    vURLSet.remove(item.vURL);
+                    vHBoxMap.remove(item);
+
                     if (videoListView.getItems().isEmpty()) {
                         emptyLabel.setVisible(true);
                     }
@@ -183,7 +191,8 @@ public class MainController {
                 hBox.getChildren().addAll(vImageContainer, vTitleField, vImageURLField, vImageWidthField, vImageFormatComboBox, rmButton);
                 setGraphic(hBox);
 
-                videoHBoxMap.put(item, hBox);
+
+                vHBoxMap.put(item, hBox);
             }
         });
     }
@@ -220,14 +229,17 @@ public class MainController {
         mainRoot.getChildren().add(darkOverlay);
 
         Stage popupStage = new Stage();
-        popupStage.setWidth(360);
-        popupStage.setHeight(200);
+        popupStage.setWidth(380);
+        popupStage.setHeight(220);
         popupStage.initModality(Modality.APPLICATION_MODAL);
         popupStage.initStyle(StageStyle.UNDECORATED);
         popupStage.setResizable(false);
 
         Runnable popupStageCloseFn = () -> {
-            emptyLabel.setVisible(false);
+            if (!videoListView.getItems().isEmpty()) {
+                emptyLabel.setVisible(false);
+            }
+
             mainRoot.getChildren().remove(darkOverlay);
             popupStage.close();
         };
@@ -237,12 +249,36 @@ public class MainController {
                 "-fx-font-size: 22px; " +
                 "-fx-font-weight: BOLD;");
 
+        Label loadingLabel = new Label("✔ Loading URL...");
+        loadingLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: GREEN; -fx-font-weight: BOLD;");
+
+        ProgressIndicator loadingCircle = new ProgressIndicator();
+        loadingCircle.setProgress(-1);
+        loadingCircle.setPrefWidth(20);
+        loadingCircle.setPrefHeight(20);
+
+        HBox loadingLayout = new HBox(8, loadingLabel, loadingCircle);
+        loadingLayout.setStyle("-fx-alignment: CENTER;");
+
+        Label alreadyPresentLabel = new Label("❌ Already Present URL");
+        alreadyPresentLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: ORANGE; -fx-font-weight: BOLD;");
+
+        Label invalidLabel = new Label("❌ Invalid URL");
+        invalidLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: RED; -fx-font-weight: BOLD;");
+
+        Label placeHolderLabel = new Label("XXX");
+        placeHolderLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: BOLD;");
+        placeHolderLabel.setVisible(false);
+
         TextField vURLTextField = new TextField();
         vURLTextField.setStyle("-fx-text-fill: " + Const.whiteTextColorRGB + "; " +
-                "-fx-font-size: 14px; " +
+                "-fx-font-size: 16px; " +
                 "-fx-background-color: RGB(40, 41, 42); " +
                 "-fx-border-color: RGB(80, 80, 80); " +
                 "-fx-border-width: 2");
+
+        VBox textFieldLayout = new VBox(6, placeHolderLabel, vURLTextField);
+        textFieldLayout.setStyle("-fx-alignment: CENTER;");
 
         Button cancelButton = new Button("Cancel");
         cancelButton.getStyleClass().add("SecondaryButton");
@@ -253,18 +289,41 @@ public class MainController {
         confirmButton.getStyleClass().add("MainButton");
         Utils.addStyle(confirmButton, "-fx-font-size: 16px; -fx-font-weight: BOLD;");
         confirmButton.setOnAction(_ -> {
-            Video newVideo = makeVideoFromURL(vURLTextField.getText());
-            if (newVideo != null) {
-                isAddingVideo = true;
-                videoListView.getItems().add(newVideo);
-                popupStageCloseFn.run();
+            String vURL = vURLTextField.getText();
+
+            if (vURLSet.contains(vURL)) {
+                if (textFieldLayout.getChildren().getFirst() != loadingLayout) {
+                    textFieldLayout.getChildren().removeFirst();
+                    textFieldLayout.getChildren().addFirst(alreadyPresentLabel);
+                }
+                return;
             }
+            vURLSet.add(vURL);
+
+            textFieldLayout.getChildren().removeFirst();
+            textFieldLayout.getChildren().addFirst(loadingLayout);
+
+            Consumer<Video> onVideoLoaded = v -> {
+                isAddingVideo = true;
+                videoListView.getItems().add(v);
+
+                popupStageCloseFn.run();
+            };
+
+            Runnable onError = () -> {
+                vURLSet.remove(vURL);
+
+                textFieldLayout.getChildren().removeFirst();
+                textFieldLayout.getChildren().addFirst(invalidLabel);
+            };
+
+            makeVideoFromURL(vURL, onVideoLoaded, onError);
         });
 
         HBox buttonLayout = new HBox(32, cancelButton, confirmButton);
         buttonLayout.setStyle("-fx-alignment: CENTER;");
 
-        VBox popupLayout = new VBox(32, infoLabel, vURLTextField, buttonLayout);
+        VBox popupLayout = new VBox(16, infoLabel, textFieldLayout, buttonLayout);
         popupLayout.setStyle("-fx-background-color: RGB(38, 44, 48); " +
                 "-fx-padding: 16px; " +
                 "-fx-alignment: CENTER; " +
@@ -289,48 +348,84 @@ public class MainController {
         popupStage.show();
     }
 
-    private Video makeVideoFromURL(String vURL) {
+    private void makeVideoFromURL(String vURL, Consumer<Video> onVideoLoaded, Runnable onError) {
         if (isYouTubeURL(vURL)) {
-            return makeYouTubeVideoFromURL(vURL);
-        } else {
-            if (isAudioFile(vURL)) {
-                String vTitle = vURL.substring(vURL.lastIndexOf("/") + 1);
-                return new Video(vURL, vTitle, "", "", DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_FORMAT);
-            }
+            makeYouTubeVideoFromURL(vURL, onVideoLoaded, onError);
+            return;
         }
-        return null;
+
+        if (isAudioFile(vURL)) {
+            String vTitle = vURL.substring(vURL.lastIndexOf("/") + 1);
+            Video v = new Video(vURL, vTitle, "", "", DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_FORMAT);
+            onVideoLoaded.accept(v);
+            return;
+        }
+
+        onError.run();
     }
 
     private boolean isYouTubeURL(String vURL) {
         return vURL.contains("youtube.com/") || vURL.contains("youtu.be/");
     }
 
-    private Video makeYouTubeVideoFromURL(String vURL) {
-        try {
-            ProcessBuilder processBuilder = new ProcessBuilder("bin/yt-dlp.exe", "--quiet", "--ffmpeg-location", "bin/YouTube-Mp3/bin/ffmpeg.exe", "--dump-json", "--no-playlist", "--skip-download", vURL);
-            processBuilder.redirectErrorStream(true);
-            Process process = processBuilder.start();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
+    private void makeYouTubeVideoFromURL(String vURL, Consumer<Video> onVideoLoaded, Runnable onError) {
+        Task<Video> ytDlpTask = new Task<>() {
+            @Override
+            protected Video call() {
+                try {
+                    ProcessBuilder processBuilder = new ProcessBuilder(
+                            "bin/yt-dlp.exe",
+                            "--quiet",
+                            "--ffmpeg-location", "bin/YouTube-Mp3/bin/ffmpeg.exe",
+                            "--dump-json",
+                            "--no-playlist",
+                            "--skip-download",
+                            vURL
+                    );
+                    processBuilder.redirectErrorStream(true);
+                    Process process = processBuilder.start();
+                    BufferedReader bufferedReader = new BufferedReader(
+                            new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8)
+                    );
 
-            StringBuilder jsonOutput = new StringBuilder();
-            String currLine;
-            while ((currLine = bufferedReader.readLine()) != null) {
-                jsonOutput.append(currLine);
+                    StringBuilder jsonOutput = new StringBuilder();
+                    String currLine;
+                    while ((currLine = bufferedReader.readLine()) != null) {
+                        jsonOutput.append(currLine);
+                    }
+
+                    process.waitFor();
+
+                    if (!jsonOutput.isEmpty()) {
+                        JSONObject jsonObject = new JSONObject(jsonOutput.toString());
+
+                        String vTitle = jsonObject.getString("title");
+                        String vHqImageURL = String.format("https://img.youtube.com/vi/%s/maxresdefault.jpg", jsonObject.getString("id"));
+                        String vMqImageURL = String.format("https://img.youtube.com/vi/%s/mqdefault.jpg", jsonObject.getString("id"));
+
+                        return new Video(vURL, vTitle, vHqImageURL, vMqImageURL, DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_FORMAT);
+                    }
+                } catch (IOException | InterruptedException | JSONException e) {
+                    return null;
+                }
+                return null;
             }
+        };
 
-            process.waitFor();
-
-            if (!jsonOutput.isEmpty()) {
-                JSONObject jsonObject = new JSONObject(jsonOutput.toString());
-                String vTitle = jsonObject.getString("title");
-                String vHqImageURL = String.format("https://img.youtube.com/vi/%s/maxresdefault.jpg", jsonObject.getString("id"));
-                String vMqImageURL = String.format("https://img.youtube.com/vi/%s/mqdefault.jpg", jsonObject.getString("id"));
-                return new Video(vURL, vTitle, vHqImageURL, vMqImageURL, DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_FORMAT);
+        ytDlpTask.setOnSucceeded(_ -> {
+            Video v = ytDlpTask.getValue();
+            if (v != null) {
+                onVideoLoaded.accept(v);
+            } else {
+                onError.run();
             }
-        } catch (IOException | InterruptedException | JSONException e) {
-            return null;
-        }
-        return null;
+        });
+
+        ytDlpTask.setOnFailed(_ -> onError.run());
+
+        Thread ytDlpThread = new Thread(ytDlpTask);
+        ytDlpThread.setDaemon(true);
+        ytDlpThread.start();
     }
 
     private boolean isAudioFile(String vURL) {
@@ -341,6 +436,16 @@ public class MainController {
                 || vURLLower.endsWith(".ogg")
                 || vURLLower.endsWith(".m4a")
                 || vURLLower.endsWith(".aac");
+    }
+
+    @FXML
+    private void onDownloadButtonAction(ActionEvent e) {
+
+    }
+
+    @FXML
+    private void onOpenOutputFolderAction(ActionEvent e) {
+
     }
 
     private static class Video {
