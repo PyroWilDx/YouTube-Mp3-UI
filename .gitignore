@@ -33,3 +33,6 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+bin/YouTube-Mp3/Out/*
+!bin/YouTube-Mp3/Out/X
