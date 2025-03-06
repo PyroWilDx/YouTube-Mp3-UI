@@ -7,6 +7,10 @@ import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -21,8 +25,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -445,7 +451,10 @@ public class MainController {
 
     @FXML
     private void onOpenOutputFolderAction(ActionEvent e) {
-
+        try {
+            Desktop.getDesktop().open(new File("bin/YouTube-Mp3/Out"));
+        } catch (IOException _) {
+        }
     }
 
     private static class Video {
