@@ -1,5 +1,6 @@
 package pyrowildx.youtube.mp3.ui;
 
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
@@ -27,10 +28,7 @@ import org.json.JSONObject;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -40,7 +38,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 public class MainController {
-    private static final int DEFAULT_IMAGE_WIDTH = 3600;
+    private static final int DEFAULT_IMAGE_WIDTH = 3200;
     private static final String DEFAULT_IMAGE_FORMAT = "JPEG";
 
     @FXML
@@ -56,6 +54,8 @@ public class MainController {
     @FXML
     private Label dlProgressLabel;
     @FXML
+    private ProgressIndicator dlProgressIndicator;
+    @FXML
     private ProgressBar dlProgressBar;
 
     private final Set<String> vURLSet = new HashSet<>();
@@ -65,6 +65,8 @@ public class MainController {
     @FXML
     private void initialize() {
         setupVideoListView();
+
+        dlProgressIndicator.setVisible(false);
     }
 
     private void setupVideoListView() {
@@ -390,13 +392,13 @@ public class MainController {
                     );
                     processBuilder.redirectErrorStream(true);
                     Process process = processBuilder.start();
-                    BufferedReader bufferedReader = new BufferedReader(
+                    BufferedReader br = new BufferedReader(
                             new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8)
                     );
 
                     StringBuilder jsonOutput = new StringBuilder();
                     String currLine;
-                    while ((currLine = bufferedReader.readLine()) != null) {
+                    while ((currLine = br.readLine()) != null) {
                         jsonOutput.append(currLine);
                     }
 
@@ -446,16 +448,108 @@ public class MainController {
 
     @FXML
     private void onDownloadButtonAction(ActionEvent e) {
+        if (dlProgressIndicator.isVisible()) {
+            return;
+        }
 
+        dlProgressLabel.setText("");
+        dlProgressIndicator.setVisible(true);
+        dlProgressBar.setProgress(0);
+
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter("bin/YouTube-Mp3/VidList.txt"))) {
+            for (Video v : videoListView.getItems()) {
+                bw.write(String.format("%s Title=\"%s\" ImgLink=\"%s\" ImgWidth=\"%d\" ImgFormat=\"%s\"",
+                        v.vURL,
+                        v.vTitle.replace("\"", ""),
+                        v.vHqImageURL.replace("\"", ""),
+                        v.vImageWidth,
+                        v.vImageFormat));
+                bw.newLine();
+            }
+        } catch (IOException _) {
+            dlProgressLabel.setText("❌ An Error Occurred");
+            dlProgressLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: RED; -fx-font-weight: BOLD;");
+            dlProgressIndicator.setVisible(false);
+            return;
+        }
+
+        int vTotal = videoListView.getItems().size();
+
+        dlProgressLabel.setText(String.format("0 / %d", vTotal));
+        dlProgressLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: GREEN; -fx-font-weight: BOLD;");
+
+        new Thread(() -> {
+            try {
+                ProcessBuilder processBuilder = new ProcessBuilder("bin/YouTube-Mp3/YouTube-Mp3.exe");
+                processBuilder.directory(new File("bin/YouTube-Mp3"));
+
+                Process process = processBuilder.start();
+
+                try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()))) {
+                    bw.write("\n");
+                    bw.flush();
+                }
+
+                BufferedReader br1 = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String currLine;
+                int vProgress = -1;
+                StringBuilder logs = new StringBuilder();
+                while ((currLine = br1.readLine()) != null) {
+                    if (currLine.equals("======")) {
+                        vProgress++;
+
+                        int currProgress = vProgress;
+                        Platform.runLater(() -> {
+                            dlProgressLabel.setText(String.format("%d / %d", currProgress, vTotal));
+                            dlProgressBar.setProgress((double) currProgress / (double) vTotal);
+                        });
+                    }
+
+                    logs.append("StdOut: ").append(currLine).append("\n");
+                }
+
+                BufferedReader br2 = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+                while ((currLine = br2.readLine()) != null) {
+                    logs.append("StdErr: ").append(currLine).append("\n");
+                }
+
+                int exitCode = process.waitFor();
+
+                try (BufferedWriter bw = new BufferedWriter(new FileWriter("bin/YouTube-Mp3/Logs.txt"))) {
+                    bw.write(logs.toString());
+                    bw.newLine();
+                }
+
+                if (exitCode != 0) {
+                    throw new Exception();
+                }
+            } catch (Exception _) {
+                Platform.runLater(() -> {
+                    dlProgressLabel.setText("❌ An Error Occurred");
+                    dlProgressLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: RED; -fx-font-weight: BOLD;");
+                });
+            } finally {
+                dlProgressIndicator.setVisible(false);
+            }
+        }).start();
     }
 
     @FXML
     private void onOpenOutputFolderAction(ActionEvent e) {
+        File outputFolder = new File("bin/YouTube-Mp3/Out");
+
+        if (!outputFolder.exists()) {
+            if (!outputFolder.mkdirs()) {
+                return;
+            }
+        }
+
         try {
-            Desktop.getDesktop().open(new File("bin/YouTube-Mp3/Out"));
+            Desktop.getDesktop().open(outputFolder);
         } catch (IOException _) {
         }
     }
+
 
     private static class Video {
         public String vURL;
