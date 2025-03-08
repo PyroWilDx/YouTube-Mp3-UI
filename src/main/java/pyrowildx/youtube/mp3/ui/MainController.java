@@ -57,6 +57,10 @@ public class MainController {
     private ProgressIndicator dlProgressIndicator;
     @FXML
     private ProgressBar dlProgressBar;
+    @FXML
+    private TextField defaultImageWidthTextField;
+    @FXML
+    private ComboBox<String> defaultImageFormatComboBox;
 
     private final Set<String> vURLSet = new HashSet<>();
     private final Map<Video, HBox> vHBoxMap = new HashMap<>();
@@ -67,6 +71,12 @@ public class MainController {
         setupVideoListView();
 
         dlProgressIndicator.setVisible(false);
+
+        defaultImageWidthTextField.setTextFormatter(Utils.getDigitTextFormatter());
+        defaultImageWidthTextField.setText(String.valueOf(DEFAULT_IMAGE_WIDTH));
+
+        defaultImageFormatComboBox.getItems().addAll("JPEG", "PNG");
+        defaultImageFormatComboBox.setValue(DEFAULT_IMAGE_FORMAT);
     }
 
     private void setupVideoListView() {
@@ -167,12 +177,7 @@ public class MainController {
 
                 TextField vImageWidthField = new TextField(String.valueOf(item.vImageWidth));
                 Utils.setRegionWidth(vImageWidthField, 80);
-                vImageWidthField.setTextFormatter(new TextFormatter<>(change -> {
-                    if (change.getControlNewText().matches("\\d*")) {
-                        return change;
-                    }
-                    return null;
-                }));
+                vImageWidthField.setTextFormatter(Utils.getDigitTextFormatter());
                 vImageWidthField.textProperty().addListener((_, _, newValue)
                         -> item.vImageWidth = Integer.parseInt(newValue));
 
@@ -364,7 +369,9 @@ public class MainController {
 
         if (isAudioFile(vURL)) {
             String vTitle = vURL.substring(vURL.lastIndexOf("/") + 1);
-            Video v = new Video(vURL, vTitle, "", "", DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_FORMAT);
+            Video v = new Video(vURL, vTitle, "", "",
+                    Integer.parseInt(defaultImageWidthTextField.getText()),
+                    defaultImageFormatComboBox.getValue());
             onVideoLoaded.accept(v);
             return;
         }
@@ -411,7 +418,9 @@ public class MainController {
                         String vHqImageURL = String.format("https://img.youtube.com/vi/%s/maxresdefault.jpg", jsonObject.getString("id"));
                         String vMqImageURL = String.format("https://img.youtube.com/vi/%s/mqdefault.jpg", jsonObject.getString("id"));
 
-                        return new Video(vURL, vTitle, vHqImageURL, vMqImageURL, DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_FORMAT);
+                        return new Video(vURL, vTitle, vHqImageURL, vMqImageURL,
+                                Integer.parseInt(defaultImageWidthTextField.getText()),
+                                defaultImageFormatComboBox.getValue());
                     }
                 } catch (IOException | InterruptedException | JSONException e) {
                     return null;
