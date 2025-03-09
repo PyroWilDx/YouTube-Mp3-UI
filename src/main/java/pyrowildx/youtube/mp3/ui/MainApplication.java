@@ -3,9 +3,11 @@ package pyrowildx.youtube.mp3.ui;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 
 public class MainApplication extends Application {
@@ -17,6 +19,10 @@ public class MainApplication extends Application {
         Scene scene = new Scene(loader.load());
         Utils.addStyleSheet(MainApplication.class, scene, Const.mainViewCSSFile);
 
+        InputStream appIconRes = MainApplication.class.getResourceAsStream("/pyrowildx/youtube/mp3/ui/Imgs/Icon.png");
+        if (appIconRes != null) {
+            stage.getIcons().add(new Image(appIconRes));
+        }
         stage.setTitle("YouTube-Mp3");
         stage.setMinWidth(960);
         stage.setMinHeight(640);
