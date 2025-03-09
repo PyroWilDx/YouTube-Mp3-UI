@@ -4,6 +4,18 @@
 
 <img src=".readme/YouTube-Mp3-UI.png">
 
+## Download
+
+> [!IMPORTANT]
+> - Required &ndash; [Java JDK 23](https://download.oracle.com/java/23/latest/jdk-23_windows-x64_bin.exe).
+
+<div align="center">
+
+| [<img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/windows8/windows8-original.svg" width="60"/>](https://github.com/PyroWilDx/YouTube-Mp3-UI/releases/) |
+|---|
+
+</div>
+
 ## Development Set-Up
 
 <div align="center">
