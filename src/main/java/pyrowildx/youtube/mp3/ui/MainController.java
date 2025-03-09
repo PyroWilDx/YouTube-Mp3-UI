@@ -70,7 +70,9 @@ public class MainController {
     private void initialize() {
         setupVideoListView();
 
+        dlProgressLabel.setText("");
         dlProgressIndicator.setVisible(false);
+        dlProgressBar.setProgress(0);
 
         defaultImageWidthTextField.setTextFormatter(Utils.getDigitTextFormatter());
         defaultImageWidthTextField.setText(String.valueOf(DEFAULT_IMAGE_WIDTH));
