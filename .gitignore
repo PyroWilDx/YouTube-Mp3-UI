@@ -34,6 +34,8 @@ build/
 ### Mac OS ###
 .DS_Store
 
+### YouTube-Mp3-UI ###
 Out/
+Build/
 VidList.txt
 Logs.txt
