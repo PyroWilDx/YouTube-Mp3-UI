@@ -20,7 +20,7 @@
                   <Font size="48.0" />
                </font>
             </Button>
-            <HBox alignment="CENTER" layoutX="380.0" layoutY="8.0" prefHeight="82.0" prefWidth="270.0" spacing="8.0" AnchorPane.bottomAnchor="8.0" AnchorPane.topAnchor="8.0">
+            <HBox alignment="CENTER" layoutX="113.0" layoutY="13.0" prefHeight="82.0" prefWidth="270.0" spacing="8.0" AnchorPane.bottomAnchor="15.0" AnchorPane.topAnchor="13.0">
                <children>
                   <Label fx:id="dlProgressLabel1112" alignment="CENTER" text="Default Image Width" textAlignment="CENTER" textFill="#e6edf8">
                      <font>
@@ -30,7 +30,7 @@
                   <TextField fx:id="defaultImageWidthTextField" prefWidth="80.0" />
                </children>
             </HBox>
-            <HBox alignment="CENTER" layoutX="90.0" prefHeight="42.0" prefWidth="261.0" spacing="8.0" AnchorPane.bottomAnchor="10.0" AnchorPane.topAnchor="8.0">
+            <HBox alignment="CENTER" layoutX="415.0" layoutY="9.0" prefHeight="42.0" prefWidth="261.0" spacing="8.0" AnchorPane.bottomAnchor="13.0" AnchorPane.topAnchor="9.0">
                <children>
                   <Label fx:id="dlProgressLabel11121" alignment="CENTER" text="Default Image Format" textAlignment="CENTER" textFill="#e6edf8">
                      <font>
