@@ -7,7 +7,7 @@
 ## Download
 
 > [!IMPORTANT]
-> - Required &ndash; [Java JDK 23](https://download.oracle.com/java/23/latest/jdk-23_windows-x64_bin.exe).
+> - Download [Java JDK 23](https://download.oracle.com/java/23/latest/jdk-23_windows-x64_bin.exe).
 
 <div align="center">
 
